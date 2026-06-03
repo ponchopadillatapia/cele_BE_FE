@@ -12,6 +12,7 @@
 
     <script>
         window.currentUserId = {{ auth()->id() }};
+        window.currentUserName = "{{ auth()->user()->name }}";
     </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
-import DepartmentChat from './components/DepartmentChat.vue';
+import AppLayout from './components/AppLayout.vue';
 import '../css/app.css';
 
-const app = createApp(DepartmentChat);
+const app = createApp(AppLayout);
 app.mount('#app');
