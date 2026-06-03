@@ -49,41 +49,70 @@
         </div>
 
         <template v-else>
-          <div v-if="loading" class="flex items-center justify-center h-full">
-            <p class="text-gray-400">Cargando mensajes...</p>
-          </div>
-          <div
-            v-for="msg in messages"
-            :key="msg.id"
-            :class="[
-              'flex',
-              msg.user.id === currentUserId ? 'justify-end' : 'justify-start'
-            ]"
+          <!-- Transición de carga de mensajes -->
+          <Transition
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+          >
+            <div v-if="loadingMessages" class="flex items-center justify-center h-full">
+              <div class="flex flex-col items-center gap-3">
+                <svg class="w-8 h-8 animate-spin text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-gray-400 text-sm">Cargando mensajes...</p>
+              </div>
+            </div>
+          </Transition>
+
+          <!-- Mensajes con transición de entrada -->
+          <TransitionGroup
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="opacity-0 translate-y-4"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0 -translate-y-2"
+            tag="div"
+            class="space-y-4"
           >
             <div
+              v-for="msg in messages"
+              :key="msg.id"
               :class="[
-                'max-w-md px-4 py-2 rounded-lg',
-                msg.user.id === currentUserId
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-gray-800 border border-gray-200'
+                'flex',
+                msg.user.id === currentUserId ? 'justify-end' : 'justify-start'
               ]"
             >
-              <p v-if="msg.user.id !== currentUserId" class="text-xs font-semibold mb-1 text-blue-600">
-                {{ msg.user.name }}
-              </p>
-              <p>{{ msg.body }}</p>
-              <p :class="[
-                'text-xs mt-1',
-                msg.user.id === currentUserId ? 'text-blue-100' : 'text-gray-400'
-              ]">
-                {{ formatTime(msg.created_at) }}
-              </p>
+              <div
+                :class="[
+                  'max-w-md px-4 py-2 rounded-lg',
+                  msg.user.id === currentUserId
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-gray-800 border border-gray-200'
+                ]"
+              >
+                <p v-if="msg.user.id !== currentUserId" class="text-xs font-semibold mb-1 text-blue-600">
+                  {{ msg.user.name }}
+                </p>
+                <p>{{ msg.body }}</p>
+                <p :class="[
+                  'text-xs mt-1',
+                  msg.user.id === currentUserId ? 'text-blue-100' : 'text-gray-400'
+                ]">
+                  {{ formatTime(msg.created_at) }}
+                </p>
+              </div>
             </div>
-          </div>
+          </TransitionGroup>
         </template>
       </div>
 
-      <!-- Input de mensaje -->
+      <!-- Input de mensaje con LoadingButton -->
       <div v-if="activeDepartment" class="px-6 py-4 bg-white border-t border-gray-200">
         <form @submit.prevent="sendMessage" class="flex gap-3">
           <input
@@ -91,18 +120,28 @@
             type="text"
             placeholder="Escribe un mensaje..."
             class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            :disabled="sending"
+            :disabled="sendAction.isLoading.value"
           />
-          <button
+          <LoadingButton
             type="submit"
-            :disabled="!newMessage.trim() || sending"
-            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            :loading="sendAction.isLoading.value"
+            loading-text="Enviando..."
+            :disabled="!newMessage.trim()"
+            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
           >
             Enviar
-          </button>
+          </LoadingButton>
         </form>
       </div>
     </main>
+
+    <!-- Alerta toast global -->
+    <AlertToast
+      :show="sendAction.showAlert.value"
+      :type="sendAction.alert.value?.type"
+      :message="sendAction.alert.value?.message"
+      @dismiss="sendAction.dismissAlert"
+    />
   </div>
 </template>
 
@@ -110,16 +149,21 @@
 import { ref, nextTick, onUnmounted } from 'vue';
 import axios from 'axios';
 import '../echo';
+import LoadingButton from './LoadingButton.vue';
+import AlertToast from './AlertToast.vue';
+import { useAsyncAction } from '../composables/useAsyncAction';
 
 const departments = ref([]);
 const activeDepartment = ref(null);
 const messages = ref([]);
 const newMessage = ref('');
-const sending = ref(false);
-const loading = ref(false);
+const loadingMessages = ref(false);
 const onlineUsers = ref([]);
 const messagesContainer = ref(null);
 const currentUserId = window.currentUserId;
+
+// Acción async para enviar mensajes
+const sendAction = useAsyncAction();
 
 let echoChannel = null;
 
@@ -133,57 +177,58 @@ async function loadDepartments() {
 async function selectDepartment(dept) {
   if (activeDepartment.value?.id === dept.id) return;
 
-  // Salir del canal anterior
   if (echoChannel) {
     window.Echo.leave(`department.${activeDepartment.value.id}`);
   }
 
   activeDepartment.value = dept;
-  loading.value = true;
+  loadingMessages.value = true;
 
-  // Cargar mensajes
   const { data } = await axios.get(`/api/departments/${dept.id}/messages`);
   messages.value = data;
-  loading.value = false;
+  loadingMessages.value = false;
 
   await nextTick();
   scrollToBottom();
 
-  // Unirse al canal de presencia
   echoChannel = window.Echo.join(`department.${dept.id}`)
-    .here((users) => {
-      onlineUsers.value = users;
-    })
-    .joining((user) => {
-      onlineUsers.value.push(user);
-    })
-    .leaving((user) => {
-      onlineUsers.value = onlineUsers.value.filter(u => u.id !== user.id);
-    })
+    .here((users) => { onlineUsers.value = users; })
+    .joining((user) => { onlineUsers.value.push(user); })
+    .leaving((user) => { onlineUsers.value = onlineUsers.value.filter(u => u.id !== user.id); })
     .listen('MessageSent', (e) => {
       messages.value.push(e);
       nextTick(() => scrollToBottom());
     });
 }
 
-// Enviar mensaje
+// Enviar mensaje usando el composable con transiciones
 async function sendMessage() {
-  if (!newMessage.value.trim() || sending.value) return;
+  if (!newMessage.value.trim()) return;
 
-  sending.value = true;
+  const body = newMessage.value;
+  newMessage.value = '';
+
   try {
-    const { data } = await axios.post(
-      `/api/departments/${activeDepartment.value.id}/messages`,
-      { body: newMessage.value }
+    await sendAction.execute(
+      async () => {
+        const { data } = await axios.post(
+          `/api/departments/${activeDepartment.value.id}/messages`,
+          { body }
+        );
+        messages.value.push(data);
+        await nextTick();
+        scrollToBottom();
+        return data;
+      },
+      {
+        successMessage: 'Mensaje enviado',
+        errorMessage: 'Error al enviar el mensaje',
+        duration: 2000,
+      }
     );
-    messages.value.push(data);
-    newMessage.value = '';
-    await nextTick();
-    scrollToBottom();
-  } catch (error) {
-    console.error('Error al enviar mensaje:', error);
-  } finally {
-    sending.value = false;
+  } catch {
+    // Restaurar mensaje si falló
+    newMessage.value = body;
   }
 }
 
@@ -197,7 +242,6 @@ function formatTime(dateStr) {
   return new Date(dateStr).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Inicializar
 loadDepartments();
 
 onUnmounted(() => {

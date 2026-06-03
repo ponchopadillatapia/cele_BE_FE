@@ -11,18 +11,26 @@
       ]"
       aria-label="Notificaciones"
     >
-      <!-- Icono campana -->
       <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
       </svg>
 
-      <!-- Badge contador -->
-      <span
-        v-if="unreadCount > 0"
-        class="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full ring-2 ring-white"
+      <!-- Badge contador con transición -->
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-0"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-0"
       >
-        {{ unreadCount > 99 ? '99+' : unreadCount }}
-      </span>
+        <span
+          v-if="unreadCount > 0"
+          class="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full ring-2 ring-white"
+        >
+          {{ unreadCount > 99 ? '99+' : unreadCount }}
+        </span>
+      </Transition>
     </button>
 
     <!-- Panel de notificaciones -->
@@ -41,79 +49,121 @@
         <!-- Header del panel -->
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <h3 class="font-semibold text-gray-800">Notificaciones</h3>
-          <button
+          <LoadingButton
             v-if="unreadCount > 0"
             @click="markAllRead"
-            class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+            :loading="markAllAction.isLoading.value"
+            loading-text=""
+            class="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded"
           >
             Marcar todas como leídas
-          </button>
+          </LoadingButton>
         </div>
 
         <!-- Lista de notificaciones -->
         <div class="flex-1 overflow-y-auto">
-          <div v-if="notifications.length === 0" class="p-8 text-center text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <p>No tienes notificaciones</p>
-          </div>
-
-          <a
-            v-for="notif in notifications"
-            :key="notif.id"
-            :href="notif.link || '#'"
-            @click="handleClick(notif)"
-            class="flex items-start gap-3 px-4 py-3 border-b border-gray-50 transition-colors hover:bg-gray-50"
-            :class="{ 'bg-blue-50/50': !notif.read_at }"
+          <!-- Estado vacío -->
+          <Transition
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="opacity-0"
+            enter-to-class="opacity-100"
           >
-            <!-- Icono por tipo -->
-            <div
-              class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-              :class="typeStyles[notif.type]?.bg || 'bg-gray-100'"
-            >
-              <component :is="'span'" v-html="typeStyles[notif.type]?.icon || ''" class="w-5 h-5" />
+            <div v-if="notifications.length === 0" class="p-8 text-center text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <p>No tienes notificaciones</p>
             </div>
+          </Transition>
 
-            <!-- Contenido -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ notif.title }}</p>
-                <span
-                  v-if="!notif.read_at"
-                  class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"
-                ></span>
+          <!-- Notificaciones con TransitionGroup -->
+          <TransitionGroup
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-x-4"
+            enter-to-class="opacity-100 translate-x-0"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0 translate-x-4"
+            tag="div"
+          >
+            <a
+              v-for="notif in notifications"
+              :key="notif.id"
+              :href="notif.link || '#'"
+              @click="handleClick(notif)"
+              class="flex items-start gap-3 px-4 py-3 border-b border-gray-50 transition-colors hover:bg-gray-50"
+              :class="{ 'bg-blue-50/50': !notif.read_at }"
+            >
+              <!-- Icono por tipo -->
+              <div
+                class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                :class="typeStyles[notif.type]?.bg || 'bg-gray-100'"
+              >
+                <span v-html="typeStyles[notif.type]?.icon || ''" class="w-5 h-5"></span>
               </div>
-              <p class="text-sm text-gray-500 line-clamp-2">{{ notif.body }}</p>
-              <p class="text-xs text-gray-400 mt-1">{{ timeAgo(notif.created_at) }}</p>
-            </div>
 
-            <!-- Badge tipo -->
-            <span
-              class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium"
-              :class="typeStyles[notif.type]?.badge || 'bg-gray-100 text-gray-600'"
-            >
-              {{ typeLabels[notif.type] }}
-            </span>
-          </a>
+              <!-- Contenido -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <p class="text-sm font-medium text-gray-900 truncate">{{ notif.title }}</p>
+                  <Transition
+                    enter-active-class="transition duration-200"
+                    enter-from-class="scale-0"
+                    enter-to-class="scale-100"
+                    leave-active-class="transition duration-150"
+                    leave-from-class="scale-100"
+                    leave-to-class="scale-0"
+                  >
+                    <span
+                      v-if="!notif.read_at"
+                      class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"
+                    ></span>
+                  </Transition>
+                </div>
+                <p class="text-sm text-gray-500 line-clamp-2">{{ notif.body }}</p>
+                <p class="text-xs text-gray-400 mt-1">{{ timeAgo(notif.created_at) }}</p>
+              </div>
+
+              <!-- Badge tipo -->
+              <span
+                class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium"
+                :class="typeStyles[notif.type]?.badge || 'bg-gray-100 text-gray-600'"
+              >
+                {{ typeLabels[notif.type] }}
+              </span>
+            </a>
+          </TransitionGroup>
         </div>
       </div>
     </Transition>
 
     <!-- Overlay para cerrar -->
     <div v-if="showPanel" @click="showPanel = false" class="fixed inset-0 z-40"></div>
+
+    <!-- Alert toast -->
+    <AlertToast
+      :show="markAllAction.showAlert.value"
+      :type="markAllAction.alert.value?.type"
+      :message="markAllAction.alert.value?.message"
+      @dismiss="markAllAction.dismissAlert"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import '../echo';
+import LoadingButton from './LoadingButton.vue';
+import AlertToast from './AlertToast.vue';
+import { useAsyncAction } from '../composables/useAsyncAction';
 
 const notifications = ref([]);
 const unreadCount = ref(0);
 const showPanel = ref(false);
 const hasNew = ref(false);
+
+const markAllAction = useAsyncAction();
 
 const typeLabels = {
   mensaje: 'Mensaje',
@@ -171,9 +221,18 @@ async function handleClick(notif) {
 }
 
 async function markAllRead() {
-  await axios.post('/api/notifications/read-all');
-  notifications.value.forEach(n => { n.read_at = n.read_at || new Date().toISOString(); });
-  unreadCount.value = 0;
+  await markAllAction.execute(
+    async () => {
+      await axios.post('/api/notifications/read-all');
+      notifications.value.forEach(n => { n.read_at = n.read_at || new Date().toISOString(); });
+      unreadCount.value = 0;
+    },
+    {
+      successMessage: 'Todas las notificaciones marcadas como leídas',
+      errorMessage: 'Error al marcar notificaciones',
+      duration: 2500,
+    }
+  );
 }
 
 function timeAgo(dateStr) {
@@ -187,14 +246,12 @@ function timeAgo(dateStr) {
 onMounted(() => {
   loadNotifications();
 
-  // Escuchar notificaciones en tiempo real via WebSocket
   window.Echo.private(`user.${window.currentUserId}.notifications`)
     .listen('NewNotification', (data) => {
       notifications.value.unshift(data);
       unreadCount.value++;
       hasNew.value = true;
 
-      // Quitar animación después de 3 segundos
       clearTimeout(newTimeout);
       newTimeout = setTimeout(() => { hasNew.value = false; }, 3000);
     });
