@@ -45,7 +45,7 @@ import { computed } from 'vue';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
-  type: { type: String, default: 'success' }, // 'success' | 'error'
+  type: { type: String, default: 'success' },
   message: { type: String, default: '' },
 });
 
@@ -53,7 +53,7 @@ defineEmits(['dismiss']);
 
 const alertClasses = computed(() => {
   return props.type === 'success'
-    ? 'bg-green-50 border border-green-200 text-green-800'
-    : 'bg-red-50 border border-red-200 text-red-800';
+    ? 'bg-gray-900 border border-green-500/50 text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)]'
+    : 'bg-gray-900 border border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
 });
 </script>

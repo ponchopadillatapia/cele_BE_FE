@@ -1,6 +1,7 @@
-import { createApp } from 'vue';
-import AppLayout from './components/AppLayout.vue';
-import '../css/app.css';
+import './bootstrap';
 
-const app = createApp(AppLayout);
-app.mount('#app');
+import Alpine from 'alpinejs';
+
+window.Alpine = Alpine;
+
+Alpine.start();

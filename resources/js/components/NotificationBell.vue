@@ -6,8 +6,8 @@
       class="relative p-2 rounded-full transition-all duration-300"
       :class="[
         hasNew
-          ? 'bg-red-100 text-red-600 animate-bounce-subtle hover:bg-red-200'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          ? 'bg-green-950 text-green-400 animate-bounce-subtle hover:bg-green-900 shadow-[0_0_10px_rgba(74,222,128,0.4)]'
+          : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-green-400'
       ]"
       aria-label="Notificaciones"
     >
@@ -15,7 +15,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
       </svg>
 
-      <!-- Badge contador con transición -->
+      <!-- Badge contador -->
       <Transition
         enter-active-class="transition duration-300 ease-out"
         enter-from-class="opacity-0 scale-0"
@@ -26,7 +26,7 @@
       >
         <span
           v-if="unreadCount > 0"
-          class="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full ring-2 ring-white"
+          class="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-gray-950 bg-green-400 rounded-full ring-2 ring-gray-900 shadow-[0_0_8px_rgba(74,222,128,0.6)]"
         >
           {{ unreadCount > 99 ? '99+' : unreadCount }}
         </span>
@@ -44,31 +44,30 @@
     >
       <div
         v-if="showPanel"
-        class="absolute right-0 top-12 w-96 max-h-[480px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 flex flex-col overflow-hidden"
+        class="absolute right-0 top-12 w-96 max-h-[480px] bg-gray-900 rounded-xl shadow-2xl border border-gray-700 z-50 flex flex-col overflow-hidden"
       >
-        <!-- Header del panel -->
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-          <h3 class="font-semibold text-gray-800">Notificaciones</h3>
+        <!-- Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+          <h3 class="font-semibold text-green-400">Notificaciones</h3>
           <LoadingButton
             v-if="unreadCount > 0"
             @click="markAllRead"
             :loading="markAllAction.isLoading.value"
             loading-text=""
-            class="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded"
+            class="text-xs text-green-400 hover:text-green-300 font-medium px-2 py-1 rounded hover:bg-gray-800"
           >
             Marcar todas como leídas
           </LoadingButton>
         </div>
 
-        <!-- Lista de notificaciones -->
+        <!-- Lista -->
         <div class="flex-1 overflow-y-auto">
-          <!-- Estado vacío -->
           <Transition
             enter-active-class="transition duration-300 ease-out"
             enter-from-class="opacity-0"
             enter-to-class="opacity-100"
           >
-            <div v-if="notifications.length === 0" class="p-8 text-center text-gray-400">
+            <div v-if="notifications.length === 0" class="p-8 text-center text-gray-600">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
@@ -76,7 +75,6 @@
             </div>
           </Transition>
 
-          <!-- Notificaciones con TransitionGroup -->
           <TransitionGroup
             enter-active-class="transition duration-300 ease-out"
             enter-from-class="opacity-0 -translate-x-4"
@@ -91,13 +89,13 @@
               :key="notif.id"
               :href="notif.link || '#'"
               @click="handleClick(notif)"
-              class="flex items-start gap-3 px-4 py-3 border-b border-gray-50 transition-colors hover:bg-gray-50"
-              :class="{ 'bg-blue-50/50': !notif.read_at }"
+              class="flex items-start gap-3 px-4 py-3 border-b border-gray-800 transition-colors hover:bg-gray-800"
+              :class="{ 'bg-green-950/30': !notif.read_at }"
             >
               <!-- Icono por tipo -->
               <div
                 class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-                :class="typeStyles[notif.type]?.bg || 'bg-gray-100'"
+                :class="typeStyles[notif.type]?.bg || 'bg-gray-800'"
               >
                 <span v-html="typeStyles[notif.type]?.icon || ''" class="w-5 h-5"></span>
               </div>
@@ -105,7 +103,7 @@
               <!-- Contenido -->
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
-                  <p class="text-sm font-medium text-gray-900 truncate">{{ notif.title }}</p>
+                  <p class="text-sm font-medium text-gray-200 truncate">{{ notif.title }}</p>
                   <Transition
                     enter-active-class="transition duration-200"
                     enter-from-class="scale-0"
@@ -116,18 +114,18 @@
                   >
                     <span
                       v-if="!notif.read_at"
-                      class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"
+                      class="w-2 h-2 bg-green-400 rounded-full flex-shrink-0 shadow-[0_0_6px_rgba(74,222,128,0.6)]"
                     ></span>
                   </Transition>
                 </div>
-                <p class="text-sm text-gray-500 line-clamp-2">{{ notif.body }}</p>
-                <p class="text-xs text-gray-400 mt-1">{{ timeAgo(notif.created_at) }}</p>
+                <p class="text-sm text-gray-400 line-clamp-2">{{ notif.body }}</p>
+                <p class="text-xs text-gray-600 mt-1">{{ timeAgo(notif.created_at) }}</p>
               </div>
 
               <!-- Badge tipo -->
               <span
                 class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium"
-                :class="typeStyles[notif.type]?.badge || 'bg-gray-100 text-gray-600'"
+                :class="typeStyles[notif.type]?.badge || 'bg-gray-800 text-gray-400'"
               >
                 {{ typeLabels[notif.type] }}
               </span>
@@ -137,7 +135,7 @@
       </div>
     </Transition>
 
-    <!-- Overlay para cerrar -->
+    <!-- Overlay -->
     <div v-if="showPanel" @click="showPanel = false" class="fixed inset-0 z-40"></div>
 
     <!-- Alert toast -->
@@ -174,24 +172,24 @@ const typeLabels = {
 
 const typeStyles = {
   mensaje: {
-    bg: 'bg-blue-100',
-    badge: 'bg-blue-100 text-blue-700',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-blue-600"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>',
+    bg: 'bg-green-950',
+    badge: 'bg-green-950 text-green-400',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-green-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>',
   },
   multa: {
-    bg: 'bg-red-100',
-    badge: 'bg-red-100 text-red-700',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-600"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>',
+    bg: 'bg-red-950',
+    badge: 'bg-red-950 text-red-400',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-400"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>',
   },
   asamblea: {
-    bg: 'bg-purple-100',
-    badge: 'bg-purple-100 text-purple-700',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-purple-600"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>',
+    bg: 'bg-purple-950',
+    badge: 'bg-purple-950 text-purple-400',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-purple-400"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>',
   },
   pago_atrasado: {
-    bg: 'bg-amber-100',
-    badge: 'bg-amber-100 text-amber-700',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-amber-600"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+    bg: 'bg-amber-950',
+    badge: 'bg-amber-950 text-amber-400',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-amber-400"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
   },
 };
 
