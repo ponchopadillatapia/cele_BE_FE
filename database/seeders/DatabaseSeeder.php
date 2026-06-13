@@ -18,20 +18,23 @@ class DatabaseSeeder extends Seeder
         $this->call(DepartmentSeeder::class);
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'role' => 'admin',
             'department_id' => 1,
         ]);
 
         User::factory()->create([
             'name' => 'María López',
             'email' => 'maria@example.com',
+            'role' => 'resident',
             'department_id' => 1,
         ]);
 
         User::factory()->create([
             'name' => 'Carlos Ventas',
             'email' => 'carlos@example.com',
+            'role' => 'resident',
             'department_id' => 2,
         ]);
     }

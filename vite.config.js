@@ -10,6 +10,8 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/chat.js',
+                'resources/js/login.js',
+                'resources/js/register.js',
             ],
             refresh: true,
         }),
